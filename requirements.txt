@@ -1,0 +1,23 @@
+streamlit==1.33.0
+
+langchain==0.2.14
+langchain-core==0.2.35
+langchain-community==0.2.12
+langchain-text-splitters==0.2.2
+
+langchain-chroma==0.1.4
+langchain-huggingface==0.0.3
+langchain-groq==0.1.9
+
+# ✅ FIXED VERSION (important)
+chromadb==0.5.3
+
+sentence-transformers==2.7.0
+transformers==4.41.2
+torch==2.2.2
+
+pypdf==4.2.0
+python-dotenv==1.0.1
+
+tqdm==4.66.4
+numpy==1.26.4
