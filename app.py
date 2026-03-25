@@ -169,7 +169,7 @@ if api_key:
 
     uploaded_files = st.file_uploader(
         "Upload PDF or DOCX files",
-        type=["pdf", "doc", "docx", "ppt", "pptx"],
+        type=["pdf", "doc", "docx"],
         accept_multiple_files=True,
         key=f"file_uploader_{session_id}"
     )
