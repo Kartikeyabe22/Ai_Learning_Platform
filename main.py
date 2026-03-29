@@ -24,6 +24,13 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
 
+
+from typing import List, Annotated
+from fastapi import UploadFile, File, HTTPException
+import os
+import uuid
+
+
 import docx
 import uuid
 
@@ -155,10 +162,10 @@ def delete_session(session_id: str):
 @app.post("/sessions/{session_id}/upload")
 async def upload_documents(
     session_id: str,
-    files: List[UploadFile] = File(...)
+    files: Annotated[List[UploadFile], File(..., description="Upload PDF or DOCX files")]
 ):
     if session_id not in get_sessions_from_db():
-        raise HTTPException(404, "Session not found")
+        raise HTTPException(status_code=404, detail="Session not found")
 
     documents = []
     failed_files = []
@@ -183,6 +190,7 @@ async def upload_documents(
         safe_filename = f"{uuid.uuid4().hex}_{uploaded_file.filename}"
         file_path = os.path.join(session_upload_dir, safe_filename)
 
+        # Save file
         with open(file_path, "wb") as f:
             f.write(await uploaded_file.read())
 
@@ -201,20 +209,26 @@ async def upload_documents(
             add_file_to_db(session_id, uploaded_file.filename, file_path)
 
         except Exception as e:
-            os.remove(file_path)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+
             failed_files.append({
                 "filename": uploaded_file.filename,
                 "error": str(e)
             })
 
     if not documents:
-        raise HTTPException(400, {"errors": failed_files})
+        raise HTTPException(status_code=400, detail={"errors": failed_files})
 
     # Split + Embed
-    splitter = RecursiveCharacterTextSplitter(chunk_size=5000, chunk_overlap=500)
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=5000,
+        chunk_overlap=500
+    )
     splits = splitter.split_documents(documents)
 
     vectorstore_dir = vectorstore_dir_for_session(session_id)
+    os.makedirs(vectorstore_dir, exist_ok=True)
 
     vectorstore = Chroma.from_documents(
         documents=splits,
@@ -229,7 +243,6 @@ async def upload_documents(
         "chunks": len(splits),
         "failed_files": failed_files
     }
-
 # -------------------- RAG --------------------
 def get_rag_chain_for_session(session_id: str):
     if not api_key:
