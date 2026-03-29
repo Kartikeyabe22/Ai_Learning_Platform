@@ -1,24 +1,37 @@
 streamlit==1.33.0
 
+# ---------- FastAPI ----------
+fastapi==0.110.0
+pydantic==2.6.4
+starlette==0.36.3
+uvicorn==0.42.0
+
+# ---------- LangChain ----------
 langchain==0.2.14
 langchain-core==0.2.35
 langchain-community==0.2.12
 langchain-text-splitters==0.2.2
-
 langchain-chroma==0.1.4
 langchain-huggingface==0.0.3
 langchain-groq==0.1.9
 
-# ✅ FIXED VERSION (important)
+# ---------- Vector DB ----------
 chromadb==0.5.3
 
+# ---------- ML ----------
 sentence-transformers==2.7.0
 transformers==4.41.2
 torch==2.2.2
+numpy==1.26.4
 
+# ---------- File Handling ----------
 pypdf==4.2.0
 python-docx==1.2.0
-python-dotenv==1.0.1
 
+# ---------- Utils ----------
+python-dotenv==1.0.1
 tqdm==4.66.4
-numpy==1.26.4
+python-multipart==0.0.22
+httpx==0.28.1
+orjson==3.11.7
+typing-extensions==4.15.0
