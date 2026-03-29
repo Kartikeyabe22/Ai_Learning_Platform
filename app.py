@@ -217,11 +217,18 @@ if api_key:
     # ---------------- PROCESS DOCUMENTS ---------------- #
     if uploaded_files:
         documents = []
-
+        
+        # Ensure upload dict exists
+        UPLOAD_DIR = "uploaded_files"
+        session_upload_dir = os.path.join(UPLOAD_DIR, session_id)
+        os.makedirs(session_upload_dir, exist_ok=True)
+        
+        import uuid
         for uploaded_file in uploaded_files:
-            temp_path = f"./temp_{uploaded_file.name}"
+            safe_filename = f"{uuid.uuid4().hex}_{uploaded_file.name}"
+            file_path = os.path.join(session_upload_dir, safe_filename)
 
-            with open(temp_path, "wb") as f:
+            with open(file_path, "wb") as f:
                 f.write(uploaded_file.getvalue())
 
             # Determine file type and use appropriate loader
@@ -229,26 +236,39 @@ if api_key:
 
             try:
                 if file_extension == 'pdf':
-                    loader = PyPDFLoader(temp_path)
+                    loader = PyPDFLoader(file_path)
                     docs = loader.load()
-                elif file_extension in ['docx', 'doc']:
-                    docs = load_docx_file(temp_path)
+                elif file_extension == 'docx':
+                    docs = load_docx_file(file_path)
+                elif file_extension == 'doc':
+                    try:
+                        docs = load_docx_file(file_path)
+                    except Exception:
+                        st.error(f"Cannot process '{uploaded_file.name}'. The older .doc format is not supported locally. Please save it as .docx first.")
+                        if os.path.exists(file_path):
+                            os.remove(file_path)
+                        continue
                 else:
                     st.error(f"Unsupported file type: {file_extension}. Please upload PDF or DOCX files.")
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
                     continue
 
                 documents.extend(docs)
 
                 # save upload metadata
-                add_file_to_db(session_id, uploaded_file.name, temp_path)
+                add_file_to_db(session_id, uploaded_file.name, file_path)
 
             except Exception as e:
                 st.error(f"Error processing file {uploaded_file.name}: {str(e)}")
+                if os.path.exists(file_path):
+                    os.remove(file_path)
                 continue
 
         # Check if any documents were successfully loaded
         if not documents:
-            st.error("No documents could be processed. Please check your files and try again.")
+            st.error("No valid documents could be extracted. Please check your files and try again.")
+
         else:
             # Split
             text_splitter = RecursiveCharacterTextSplitter(
